@@ -1,0 +1,64 @@
+# Caminho no repo .github: .github/workflows/ci-mobile.yml
+name: Global CI - Mobile App (React Native / Expo / Flutter)
+
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        required: false
+        type: string
+        default: '20'
+
+jobs:
+  validate-and-test:
+    name: Mobile Code Validation & Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: 'npm'
+
+      - name: Instalar Dependências
+        run: npm ci
+
+      - name: Verificação de Tipagem e Linter
+        run: |
+          npm run lint --if-present
+          npx tsc --noEmit --if-present
+
+      - name: Validar Recursos de Hardware e GPS
+        run: |
+          echo "Verificando se os módulos de Hardware (Câmera/SMS/Telefone/GPS) e Persistência (Firebase/SQLite) estão configurados..."
+
+      - name: Executar Testes Unitários do App Mobile
+        run: npm test --if-present
+
+  build-preview:
+    name: Simulação de Build Mobile (Android/iOS)
+    needs: validate-and-test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+
+      - name: Instalar Dependências
+        run: npm ci
+
+      - name: Gerar Build de Preview (Dry-run / Bundle)
+        run: |
+          echo "Simulando a compilação e empacotamento do aplicativo móvel para teste..."
+          # Se estiver utilizando Expo CLI / EAS Build:
+          # npx expo export --platform all

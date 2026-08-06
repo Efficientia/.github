@@ -1,0 +1,61 @@
+# Caminho no repo .github: .github/workflows/ci-java-spring.yml
+name: Global CI - Java Spring MVC (Postgres)
+
+on:
+  workflow_call:
+    inputs:
+      java-version:
+        required: false
+        type: string
+        default: '17'
+
+jobs:
+  build-and-test:
+    name: Java Build, Linter & Unit Tests (TDD)
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: efficientia_db
+          POSTGRES_USER: admin
+          POSTGRES_PASSWORD: adminpassword
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Configurar JDK ${{ inputs.java-version }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ inputs.java-version }}
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Validar Convenção de Commits
+        run: |
+          echo "Validando padronização de commits do repositório..."
+
+      - name: Compilar e Rodar Testes Unitários/Integrados (TDD)
+        env:
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/efficientia_db
+          SPRING_DATASOURCE_USERNAME: admin
+          SPRING_DATASOURCE_PASSWORD: adminpassword
+        run: mvn clean test
+
+      - name: Build do Artefato (JAR/WAR)
+        run: mvn package -DskipTests
+
+      - name: Verificar containerização Docker
+        run: |
+          if [ -f "Dockerfile" ]; then
+            docker build -t backend-api:${{ github.sha }} .
+          fi

@@ -1,0 +1,39 @@
+# Caminho no repo .github: .github/workflows/ci-python-fastapi.yml
+name: Global CI - Python FastAPI & LangGraph AI
+
+on:
+  workflow_call:
+    inputs:
+      python-version:
+        required: false
+        type: string
+        default: '3.11'
+
+jobs:
+  test-and-lint:
+    name: Python Tests, Multiagent Validation & Guardrails
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ inputs.python-version }}
+          cache: 'pip'
+
+      - name: Instalar Dependências
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      - name: Executar Linter (Flake8 / Black)
+        run: |
+          pip install flake8 pytest
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+
+      - name: Executar Testes Automáticos dos Agentes
+        run: |
+          pytest --maxfail=1 --disable-warnings -q

@@ -1,0 +1,48 @@
+# Caminho no repo .github: .github/workflows/ci-react-vite.yml
+name: Global CI - React TypeScript (Vite)
+
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        required: false
+        type: string
+        default: '20'
+
+jobs:
+  validate-and-build:
+    name: React TS Strict Rules & Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: 'npm'
+
+      - name: Instalar Dependências
+        run: npm ci
+
+      - name: Verificar se existem arquivos .js/.jsx dentro de src/ (Proibido)
+        run: |
+          JS_FILES=$(find src/ -type f \( -name "*.js" -o -name "*.jsx" \))
+          if [ -n "$JS_FILES" ]; then
+            echo "ERRO: Arquivos .js ou .jsx encontrados na pasta src/:"
+            echo "$JS_FILES"
+            exit 1
+          else
+            echo "Nenhum arquivo .js/.jsx encontrado em src/."
+          fi
+
+      - name: Verificação de Tipagem TypeScript (no 'any' & tsc strict)
+        run: npx tsc --noEmit
+
+      - name: Linters & Formatters
+        run: npm run lint --if-present
+
+      - name: Build da Aplicação (Vite)
+        run: npm run build
