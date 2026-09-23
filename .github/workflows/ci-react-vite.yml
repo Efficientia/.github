@@ -39,7 +39,7 @@ jobs:
           fi
 
       - name: Verificação de Tipagem TypeScript (no 'any' & tsc strict)
-        run: npx tsc --noEmit
+        run: npx tsc -b --pretty false
 
       - name: Linters & Formatters
         run: npm run lint --if-present

@@ -40,19 +40,18 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      - name: Validar Convenção de Commits
-        run: |
-          echo "Validando padronização de commits do repositório..."
+      - name: Preparar Maven Wrapper
+        run: chmod +x mvnw
 
       - name: Compilar e Rodar Testes Unitários/Integrados (TDD)
         env:
           SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/efficientia_db
           SPRING_DATASOURCE_USERNAME: admin
           SPRING_DATASOURCE_PASSWORD: adminpassword
-        run: mvn clean test
+        run: ./mvnw --batch-mode --no-transfer-progress clean test
 
       - name: Build do Artefato (JAR/WAR)
-        run: mvn package -DskipTests
+        run: ./mvnw --batch-mode --no-transfer-progress package -DskipTests
 
       - name: Verificar containerização Docker
         run: |
