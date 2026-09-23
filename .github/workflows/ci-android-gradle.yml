@@ -1,0 +1,35 @@
+# Caminho no repo .github: .github/workflows/ci-android-gradle.yml
+name: Global CI - Android App (Gradle)
+
+on:
+  workflow_call:
+    inputs:
+      java-version:
+        required: false
+        type: string
+        default: '17'
+
+jobs:
+  validate-test-and-build:
+    name: Android Unit Tests & Debug Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Configurar JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ inputs.java-version }}
+          cache: 'gradle'
+
+      - name: Preparar Gradle Wrapper
+        run: chmod +x gradlew
+
+      - name: Executar testes unitários
+        run: ./gradlew --no-daemon testDebugUnitTest
+
+      - name: Gerar APK de depuração
+        run: ./gradlew --no-daemon assembleDebug
